@@ -6,10 +6,10 @@ import re
 import ssl
 
 def getArgs():
-	operations = [ 'on', 'off', 'reset', 'shutdown', 'reboot' ]
-	parser = argparse.ArgumentParser(description='Identify and perform power operations on VM')
-	parser.add_argument('-o','--operation', required=True, help="Legal inputs: " + ", ".join(operations))
-	parser.add_argument('-v', '--vmname', required=True, help="Substring in VM name" )
+	operations = [ 'on', 'off', 'reset', 'shutdown', 'reboot' , 'list']
+	parser = argparse.ArgumentParser(description='Identify and perform power operations on VM, also has listing functionality when no there are no arguments')
+	parser.add_argument('-o','--operation', required=True, default=list, help="Legal inputs: " + ", ".join(operations))
+	parser.add_argument('-v', '--vmname',  help="Substring in VM name" )
 	args = parser.parse_args()
 	if args.operation not in operations:
 		raise Exception("Unknown operation")
@@ -21,10 +21,12 @@ def performOperation( vms, arg ):
 	for vm in vms:
 		name = vm.name
 		state = vm.runtime.powerState
-		if re.match('.*' + pat + '.*' , name ,re.IGNORECASE):
+		if re.match('.*' + pat + '.*' , name ,re.IGNORECASE) if pat is not None else True :
 			print('{:<40}{:<30}'.format(name ,state))
-			success = False
-			if input("Is " + name + "the VM to be handled (y/n)?") is "y":
+			if  op == "list": 
+				continue 
+			elif  input("Is " + name + " the VM to be handled (y/n)?") is "y" :
+				success = False
 				if state == "poweredOn":
 					if op == "off":
 						vm.PowerOff()
@@ -46,7 +48,7 @@ def performOperation( vms, arg ):
 					
 				if success:
 					print("Operation successful !!")
-				else:
+				elif op is not None:
 					print("Oops ..!  The operation is forbidden :(")
 					
 	return "Done.. Checking..!!"
